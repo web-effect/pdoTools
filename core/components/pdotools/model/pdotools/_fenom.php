@@ -7,6 +7,7 @@ if (!class_exists('Fenom')) {
 
 class FenomX extends Fenom
 {
+    public static $pdoTools_config=[];
     /** @var pdoTools $pdoTools */
     protected $pdoTools;
     /** @var modX $modx */
@@ -54,6 +55,9 @@ class FenomX extends Fenom
         $this->modx = $pdoTools->modx;
 
         $this->_addDefaultModifiers();
+        
+        self::$pdoTools_config = $pdoTools->config;
+        $this->addPreFilter('FenomX::beforeCompile');
 
         $this->modx->invokeEvent(
             'pdoToolsOnFenomInit',
@@ -655,6 +659,24 @@ class FenomX extends Fenom
                 ? $input
                 : $result;
         };
+    }
+    
+    /**
+     * Filter before compile
+     *
+     * @param \Fenom\Template $template
+     * @param str $src
+     *
+     * @return str
+     */
+    public static function beforeCompile($template,$src)
+    {
+    	$replace=false;
+    	$replacable=[];$substitute=[];
+    	if(self::$pdoTools_config['fenomTagStart']!=='{'){$replace=true;$replacable[]=self::$pdoTools_config['fenomTagStart'];$substitute[]='{';}
+    	if(self::$pdoTools_config['fenomTagEnd']!=='}'){$replace=true;$replacable[]=self::$pdoTools_config['fenomTagEnd'];$substitute[]='}';}
+    	if($replace)$src = str_replace($replacable,$substitute,$src);
+    	return $src;
     }
 
 }
