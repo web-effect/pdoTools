@@ -272,6 +272,29 @@ class pdoParser extends modParser
 
         return $output;
     }
+    
+    /**
+     * @param str $editor
+     * @param str $mime
+     *
+     * @return str
+     */
+    public function getEditorMime($editor,$mime)
+    {
+    	$fenomMime = $this->modx->getOption('pdotools_fenom_mime',null,'text/x-smarty');
+    	switch($editor)
+    	{
+    		case 'ace':
+    		{
+    			$useHighlight = false;
+    			if(!$this->modx->event&&$this->pdoTools->config['useFenom'])return $fenomMime;
+    			if(in_array($this->modx->event->name,['OnChunkFormPrerender'])&&$this->pdoTools->config['useFenom'])return $fenomMime;
+    			if(in_array($this->modx->event->name,['OnTempFormPrerender','OnDocFormPrerender'])&&$this->pdoTools->config['useFenomParser'])return $fenomMime;
+    			break;
+    		}
+    	}
+    	return $mime;
+    }
 
 }
 
