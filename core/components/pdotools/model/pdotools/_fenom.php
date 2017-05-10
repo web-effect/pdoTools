@@ -678,5 +678,85 @@ class FenomX extends Fenom
     	if($replace)$src = str_replace($replacable,$substitute,$src);
     	return $src;
     }
+    
+    public function getHighlights($editor)
+    {
+    	$syntax = [];
+    	$syntax['rules']=[];
+    	$syntax['starttags']=[];
+    	
+    	switch($editor)
+    	{
+    		case 'ace':
+    		{
+    			$st = str_split($this->pdoTools->config['fenomTagStart']);
+    			$et = str_split($this->pdoTools->config['fenomTagEnd']);
+    			$st_o=$st[0];$et_o=$et[0];
+    			$st_c=$st[count($st)-1];$et_c=$et[count($et)-1];
+    			
+    			$syntax['rules']['fenom-comment']=array(
+					['token' => "comment.fenom",'regex' => "[^\\'.$st_c.'\\'.$et_o.']+",'merge' => true]
+					,['token' => "comment.fenom",'regex' => "\\".implode("\\",$st)."\\*.*?\\".implode("\\",$et)]
+					,['token' => "comment.fenom",'regex' => "\\s+",'merge' => true]
+					,['token' => "paren.rparen.comment.fenom",'regex' => "\\".implode("\\",$et),'next'=> "pop"]
+				);
+				$syntax['rules']['fenom-start']=array(
+					['include'=>"fenom-strings"]
+					,['include'=>"fenom-variables"]
+					,['include'=>"fenom-lang"]
+					,['defaultToken'=>"source.smarty"]
+					,['token'=>"variable.parameter.paren.lparen.fenom",'regex'=>"\\".implode("\\",$st),'push'=>'fenom-start']
+					,['token'=>"text",'regex'=>"\\s+"]
+					,['token'=>"variable.parameter.paren.rparen.tag-brackets.fenom",'regex'=>"\\".implode("\\",$et),'next'=>"pop"]
+				);
+				$syntax['rules']['fenom-lang']=array(
+					['token'=>"keyword.operator.smarty",'regex'=>"(?:!=|!|<=|>=|<|>|===|==|%|&&|\\|\\|)|\\b(?:and|or|eq|neq|ne|gte|gt|ge|lte|lt|le|not|mod)\\b"]
+					,['token'=>"constant.language.smarty",'regex'=>"\\b(?:TRUE|FALSE|true|false)\\b"]
+					,['token'=>"keyword.control.smarty",'regex'=>"\\b(?:if|else|elseif|foreach|foreachelse|section|switch|case|break|default)\\b"]
+					,['token'=>"variable.parameter.smarty",'regex'=>"\\b[a-zA-Z]+="]
+					,['token'=>"support.function.built-in.smarty",'regex'=>"\\b(?:capture|config_load|counter|cycle|debug|eval|fetch|include_php|include|insert|literal|math|strip|rdelim|ldelim|assign|constant|block|html_[a-z_]*)\\b"]
+					,['token'=>"support.function.variable-modifier.smarty",'regex'=>"\\|(?:".implode('|',$this->getModifiers()).")"]
+				);
+				$syntax['rules']["fenom-strings"]=array(
+					['token'=>"punctuation.definition.string.begin.smarty",'regex'=>"'",'push'=>[
+						['token'=>"punctuation.definition.string.end.smarty",'regex'=>"'",'next'=>"pop"]
+						,['token'=>"constant.character.escape.smarty",'regex'=>"\\\\."]
+						,['defaultToken'=>"string.quoted.single.smarty"]
+					]]
+					,['token'=>"punctuation.definition.string.begin.smarty",'regex'=>'"','push'=>[
+						['token'=>"punctuation.definition.string.end.smarty",'regex'=>'"','next'=>"pop"]
+						,['token'=>"constant.character.escape.smarty",'regex'=>"\\\\."]
+						,['defaultToken'=>"string.quoted.double.smarty"]
+					]]
+				);
+				$syntax['rules']["fenom-variables"]=array(
+					['token'=>["punctuation.definition.variable.smarty","variable.other.global.smarty"],'regex'=>"\\b(\\$)(Smarty\\.)"]
+					,['token'=>["punctuation.definition.variable.smarty","variable.other.smarty"],'regex'=>"(\\$)([a-zA-Z_][a-zA-Z0-9_]*)\\b"]
+					,['token'=>["keyword.operator.smarty","variable.other.property.smarty"],'regex'=>"(->)([a-zA-Z_][a-zA-Z0-9_]*)\\b"]
+					,['token'=>["keyword.operator.smarty","meta.function-call.object.smarty","punctuation.definition.variable.smarty","variable.other.smarty","punctuation.definition.variable.smarty"],'regex'=>"(->)([a-zA-Z_][a-zA-Z0-9_]*)(\\()(.*?)(\\))"]
+				);
+				
+				$syntax['starttags']=array(
+					['token'=>"paren.lparen.comment.fenom",'regex'=>"\\".implode("\\",$st)."\\*",'push'=>'fenom-comment','merge'=>true]
+					,['token'=>"variable.parameter.paren.lparen.tag-brackets.fenom",'regex'=>"\\".implode("\\",$st),'push'=>'fenom-start','merge'=>false]
+				);
+				
+				break;
+			}
+		}
+		return $syntax;
+	}
+	
+	public function getModifiers()
+	{
+		$modifiers = array_keys($this->_modifiers);
+		$s_query = $this->modx->newQuery('modSnippet');
+		$s_query->select(array('modSnippet'=>"GROUP_CONCAT(name SEPARATOR '|')"));
+		$s_query->prepare();
+		$s_query->stmt->execute();
+		$snippets = explode('|',$this->modx->getValue($s_query->stmt));
+		$modifiers=array_merge($modifiers,$snippets);
+		return $modifiers;
+	}
 
 }
