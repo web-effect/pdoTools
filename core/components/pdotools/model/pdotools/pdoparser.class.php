@@ -295,6 +295,17 @@ class pdoParser extends modParser
     	}
     	return $mime;
     }
+    
+    public function getEditorHighlights($editor)
+    {
+    	$highlights=[];
+    	$useFenomHighlights=false;
+		if(!$this->modx->event&&$this->pdoTools->config['useFenom'])$useFenomHighlights=true;
+		elseif(in_array($this->modx->event->name,['OnChunkFormPrerender'])&&$this->pdoTools->config['useFenom'])$useFenomHighlights=true;
+		elseif(in_array($this->modx->event->name,['OnTempFormPrerender','OnDocFormPrerender'])&&$this->pdoTools->config['useFenomParser'])$useFenomHighlights=true;
+		if($useFenomHighlights&&$fenom=$this->pdoTools->getFenom())$highlights['fenom']=$fenom->getHighlights($editor);
+    	return $highlights;
+    }
 
 }
 
