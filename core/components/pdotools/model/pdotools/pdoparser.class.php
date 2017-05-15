@@ -286,7 +286,7 @@ class pdoParser extends modParser
     	{
     		case 'ace':
     		{
-    			$useHighlight = false;
+    			if($mime!=='text/x-smarty')return $mime;
     			if(!$this->modx->event&&$this->pdoTools->config['useFenom'])return $fenomMime;
     			if(in_array($this->modx->event->name,['OnChunkFormPrerender'])&&$this->pdoTools->config['useFenom'])return $fenomMime;
     			if(in_array($this->modx->event->name,['OnTempFormPrerender','OnDocFormPrerender'])&&$this->pdoTools->config['useFenomParser'])return $fenomMime;
