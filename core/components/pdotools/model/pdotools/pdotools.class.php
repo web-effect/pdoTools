@@ -487,7 +487,10 @@ class pdoTools
         $content = is_array($chunk)
             ? trim($chunk['content'])
             : trim($chunk);
-        if (empty($this->config['useFenom']) || !preg_match($this->config['fenomSyntax'], $content)) {
+        $syntax_used = preg_match($this->config['fenomSyntax'], $content);
+        if($this->config['useFenomParser']&&!$syntax_used)$syntax_used = preg_match('#\{(\$|\/|\w+\s|\'|\()#', $content);
+        
+        if (empty($this->config['useFenom']) || !$syntax_used) {
             return $content;
         }
 
